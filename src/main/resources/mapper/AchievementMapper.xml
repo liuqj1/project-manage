@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.science.mapper.AchievementMapper">
+
+    <resultMap id="detailAchievement" type="com.example.science.entity.Achievement">
+        <id column="id" property="id" />
+        <result column="projectid" property="projectid" />
+        <result column="typeid" property="typeid"/>
+        <result column="typename" property="typename"/>
+        <result column="description" property="description"/>
+        <result column="quality" property="quality"/>
+        <result column="status" property="status"/>
+        <result column="username" property="username"/>
+        <result column="declaration_time" property="declarationTime"/>
+        <result column="count" property="count"/>
+        <result column="nickName" property="nickName"/>
+    </resultMap>
+
+    <select id="getMyAchievementAndCount" resultMap="detailAchievement">
+        select typename,count(*) as count
+        from achievement_record left join achievement_type a on a.typeid = achievement_record.typeid
+        where achievement_record.status=1
+        group by typename;
+    </select>
+
+    <select id="getQualityCount" resultMap="detailAchievement">
+        select typename ,quality,count(*) as count
+        from achievement_record left join achievement_type a on a.typeid = achievement_record.typeid
+        group by typename,quality;
+    </select>
+
+    <insert id="addAchievement" parameterType="com.example.science.entity.Achievement">
+        insert into achievement_record (id,projectid,typeid,description,quality,status,username,declaration_time)
+        values (null,#{projectid},#{typeid},#{description},null,0,#{username},#{declarationTime})
+    </insert>
+
+    <select id="getAchievementStatus0" parameterType="java.lang.Integer" resultMap="detailAchievement">
+        select *,ums_user.nickname as nickName,typename
+        from achievement_record inner join ums_user on achievement_record.username=ums_user.username
+        inner join achievement_type on achievement_record.typeid = achievement_type.typeid
+        where projectid=#{id} and achievement_record.status =0
+    </select>
+
+    <update id="updateAchievementStatus" parameterType="java.lang.Integer">
+        update achievement_record as ar
+        set ar.quality=#{quality}, ar.status="1"
+        where ar.id=#{id}
+    </update>
+
+    <update id="changeAchievementStatus" parameterType="java.lang.Integer">
+        update achievement_record as ar
+        set ar.status=#{status}
+        where ar.id=#{id}
+    </update>
+
+</mapper>
