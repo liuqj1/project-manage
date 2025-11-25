@@ -46,8 +46,33 @@
         <dependency>
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-boot-starter</artifactId>
-<!--            3.5.5版本会与mpj起冲突-->
+            <!--            3.5.5版本会与mpj起冲突-->
             <version>3.5.1</version>
+        </dependency>
+        <!--        消息队列-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-amqp</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.retry</groupId>
+            <artifactId>spring-retry</artifactId>
+        </dependency>
+        <!--        redis-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+        <!--        序列化-->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+        <!--        jackson默认不支持java8的时间类型，需要添加一个时间模块-->
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+            <version>2.13.0</version>
         </dependency>
         <dependency>
             <groupId>com.baomidou</groupId>
@@ -69,7 +94,7 @@
             <artifactId>springfox-swagger2</artifactId>
             <version>3.0.0</version>
         </dependency>
-<!--        // JJWT-->
+        <!--        // JJWT-->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt</artifactId>
@@ -77,10 +102,10 @@
         </dependency>
         <dependency>
             <groupId>cn.hutool</groupId>
-            <artifactId>hutool-core</artifactId>
-            <version>5.8.24</version>
+            <artifactId>hutool-all</artifactId>
+            <version>5.8.6</version>
         </dependency>
-<!--        // JWT-->
+        <!--        // JWT-->
         <dependency>
             <groupId>com.auth0</groupId>
             <artifactId>java-jwt</artifactId>
@@ -91,6 +116,11 @@
             <groupId>com.github.yulichang</groupId>
             <artifactId>mybatis-plus-join</artifactId>
             <version>1.2.2</version>
+        </dependency>
+        <dependency>
+            <groupId>org.mindrot</groupId>
+            <artifactId>jbcrypt</artifactId>
+            <version>0.4</version>
         </dependency>
     </dependencies>
     <dependencyManagement>
@@ -124,7 +154,7 @@
                 <configuration>
                     <mainClass>com.example.science.ScienceApplication</mainClass>
                     <skip>false</skip>
-<!--                    设置为false 打包成jar才能找到主类-->
+                    <!--                    设置为false 打包成jar才能找到主类-->
                 </configuration>
                 <executions>
                     <execution>
