@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.example.science.mapper.ExpendMapper">
+    <resultMap id="detailExpend" type="com.example.science.entity.Expend">
+        <id column="id" property="id" />
+        <result column="project_name" property="projectName" />
+        <result column="expend" property="expend" />
+        <result column="usedExpend" property="usedExpend"/>
+        <result column="status" property="status" />
+        <result column="declaration_time" property="declarationTime" />
+        <result column="description" property="description"/>
+        <result column="reimburse_user_nickname" property="reimburseUserNickname" />
+    </resultMap>
+
+    <select id="getProjectExpend" resultMap="detailExpend" parameterType="java.lang.String">
+        select DISTINCT t.*
+        from expend_record as t
+        where t.username = #{username} AND t.project_id=#{projectId}
+    </select>
+
+    <insert id="insertExpend" parameterType="com.example.science.entity.Expend">
+        INSERT INTO expend_record (id,project_id,username,expend,status,declaration_time,description)
+        values (null,#{expend.projectId},#{expend.username},#{expend.expend},#{expend.status},#{expend.declarationTime},#{expend.description})
+    </insert>
+
+    <select id="getMyUnverifiedExpend" resultMap="detailExpend" parameterType="java.lang.String">
+        select DISTINCT t.*,project.project_name as project_name,a.nickname as reimburse_user_nickname
+        from expend_record t left join ums_user a using(username)
+                             left JOIN project ON t.project_id=project.id
+                             left JOIN team ON project.teamid=team.teamid
+                             left JOIN ums_user b ON team.chargerid=b.username
+        where  team.chargerid=#{username} AND t.status='0' and project.status=2;
+    </select>
+
+    <update id="updateExpend" parameterType="java.lang.Integer">
+        update expend_record SET expend_record.status=#{status}
+                             where expend_record.id=#{id}
+    </update>
+
+    <select id="search" parameterType="java.util.Map" resultMap="detailExpend">
+        SELECT project_name,expend_record.*,ums_user.nickname reimburse_user_nickname FROM `expend_record`
+            LEFT JOIN project on project.id = project_id
+            INNER JOIN ums_user on ums_user.username = expend_record.username
+        <where>
+            <if test="nickName!=null and nickName != ''">
+                and ums_user.nickname like concat('%', #{nickName}, '%')
+            </if>
+            <if test="projectName!=null and  projectName != ''">
+                or project_name like concat('%', #{projectName}, '%')
+            </if>
+            <if test="startTime!=null and startTime != ''">
+                and expend_record.declaration_time between #{startTime} and #{endTime}
+            </if>
+        </where>
+
+    </select>
+
+    <select id="getExpendOverview" resultMap="detailExpend">
+        select sum(project.budget)-sum(project.expend) as expend ,sum(project.expend) as usedExpend
+        from project;
+    </select>
+</mapper>

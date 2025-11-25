@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.example.science.mapper.ProjectMapper">
+
+    <resultMap id="detailProject" type="com.example.science.entity.Project">
+        <id column="id" property="id" />
+        <result column="project_name" property="projectName" />
+        <result column="teamid" property="teamid" />
+        <result column="introduce" property="introduce" />
+        <result column="budget" property="budget" />
+        <result column="expend" property="expend" />
+        <result column="status" property="status" />
+        <result column="declaration_time" property="declarationTime" />
+        <result column="charge_user_nickname" property="chargeUserNickname" />
+        <result column="achievement_count" property="achievementCount"/>
+        <result column="teamname" property="teamname"/>
+        <result column="appearanceCount" property="appearanceCount"/>
+        <result column="utilityCount" property="utilityCount"/>
+        <result column="inventionCount" property="inventionCount"/>
+        <result column="softwareCount" property="softwareCount"/>
+        <result column="paperCount" property="paperCount"/>
+        <result column="statusCount" property="statusCount"/>
+        <result column="chargerid" property="chargerid"/>
+    </resultMap>
+
+
+
+    <select id="getMyProjects" resultMap="detailProject" parameterType="java.lang.String">
+        select distinct
+            p.id as id,
+            p.project_name as project_name,
+            p.introduce as project_introduce,
+            p.budget as budget,
+            p.introduce as introduce,
+            p.expend as expend,
+            p.declaration_time as declaration_time,
+            p.status as status,
+            p.teamid as teamid,
+            team.teamname as teamname,
+            ums_user.nickname as charge_user_nickname
+        from project p left join team using (teamid)
+                       left join team_user_relation using (teamid) left join ums_user on chargerid=ums_user.username
+        where ums_user.username =#{username};
+    </select>
+
+    <select id="getInvolvedProject" resultMap="detailProject" parameterType="java.lang.String">
+        select p.id as id,
+               p.project_name as project_name,
+               p.introduce as project_introduce,
+               p.budget as budget,
+               p.introduce as introduce,
+               p.expend as expend,
+               p.declaration_time as declaration_time,
+               p.status as status,
+               p.teamid as teamid,
+               team.teamname as teamname,
+               b.nickname as charge_user_nickname
+        from ums_user inner join  team_user_relation using (username)
+                      inner join team using (teamid) inner join ums_user b on chargerid=b.username inner join project p using(teamid)
+        where ums_user.username =#{username};
+    </select>
+
+    <select id="getInvolvedProjectStatus2" resultMap="detailProject" parameterType="java.lang.String">
+        select p.id as id,
+               p.project_name as project_name,
+               p.introduce as project_introduce,
+               p.budget as budget,
+               p.expend as expend,
+               p.declaration_time as declaration_time,
+               p.status as status,
+               p.teamid as teamid,
+               team.teamname as teamname,
+               b.nickname as charge_user_nickname
+        from ums_user left join team_user_relation using (username)
+                      left join team using (teamid) left join ums_user b on chargerid=b.username left join project p using(teamid)
+        where ums_user.username =#{username} and p.status=2;
+    </select>
+
+
+    <select id="getAllProjects" resultMap="detailProject">
+        select DISTINCT t.*,ums_user.nickname as charge_user_nickname
+        from project t left join team_user_relation on t.teamid = team_user_relation.teamid
+                       left join team on t.teamid = team.teamid
+                       left join ums_user on team.chargerid = ums_user.username
+        where t.status=1
+    </select>
+
+    <select id="getMyProjectAchievement" resultMap="detailProject" parameterType="java.lang.String">
+        with sp as
+                     (select * from achievement_record where status=1)
+
+        SELECT
+            project.*,count(sp.id ) as achievement_count
+        FROM
+            project left JOIN sp ON project.id=sp.projectid
+                    left JOIN team ON project.teamid=team.teamid
+                    left JOIN ums_user ON ums_user.username=team.chargerid
+        where project.id  in (
+            select distinct
+                p.id
+            from project p left join team using (teamid)
+                           left join team_user_relation using (teamid) left join ums_user on chargerid=ums_user.username
+            where ums_user.username= #{username} and p.status=2) group by project.id;
+    </select>
+    
+    <select id="getMyInvolvedProjectAchievement" resultMap="detailProject" parameterType="java.lang.String">
+        with sp as
+                     (select * from achievement_record where status=1)
+
+        SELECT
+            project.*,count(sp.id ) as achievement_count, ums_user.nickname as charge_user_nickname
+        FROM
+            project left JOIN sp ON project.id=sp.projectid
+                    left JOIN team ON project.teamid=team.teamid
+                    left JOIN ums_user ON ums_user.username=team.chargerid
+        where project.id  in (
+            select distinct
+                p.id
+            from ums_user left join team_user_relation using (username)
+                          left join team using (teamid) left join ums_user b on chargerid=b.username left join project p using(teamid)
+            where ums_user.username = #{username} and p.status=2) group by project.id  ;
+
+    </select>
+
+    <update id="updateProjectStatus" parameterType="java.lang.Integer">
+        update project
+        SET project.status=#{status}
+        where project.id=#{id}
+    </update>
+
+    <insert id="declareProject" parameterType="com.example.science.mapper.ProjectMapper">
+        insert into project (id,project_name,teamid,introduce,budget,expend,status,declaration_time)
+        values (null,#{projectName},#{teamid},#{introduce},#{budget},#{expend},#{status},#{declarationTime})
+    </insert>
+
+    <select id="getProjectView" parameterType="java.lang.Integer" resultMap="detailProject">
+        select project.*,count(ar.status=1 or null) as achievement_count,teamname,ums_user.nickname as charge_user_nickname,ar.status as achievement_status,ums_user.username as chargerid
+        from project left join team using(teamid) left join ums_user on chargerid=ums_user.username
+                     left join achievement_record ar on project.id = ar.projectid
+        where project.id=#{id}
+        group by ar.status ;
+    </select>
+
+    <select id="getProjectAchievement" resultMap="detailProject" parameterType="java.lang.Integer">
+        with sp as (select * from achievement_record where projectid=#{id} and achievement_record.status=1)
+        select
+            count(sp.typeid=2 or null)  appearanceCount,
+            count(sp.typeid=3 or null)  utilityCount,
+            count(sp.typeid=1 or null)  inventionCount,
+            count(sp.typeid=4 or null)  softwareCount,
+            count(sp.typeid=5 or null)  paperCount
+        from achievement_type  a left join sp on sp.typeid=a.typeid ;
+    </select>
+
+    <update id="updateProjectBudget" parameterType="java.lang.Integer">
+        update project
+        SET project.budget=#{budget}
+        where project.id=#{id}
+    </update>
+
+    <select id="fetchAchievementWithStatus" resultMap="detailProject">
+        select status,count(*) as statusCount
+        from achievement_record
+        group by status;
+    </select>
+
+    <select id="fetchProjectWithStatus" resultMap="detailProject">
+        select status,count(*) as statusCount
+        from project
+        group by status;
+    </select>
+</mapper>
