@@ -3,10 +3,12 @@ spring:
   #已经修改乘8.X
   datasource:
     #    url: jdbc:mysql://localhost:3306/my_mall?useSSL=true&useUnicode=true&characterEncoding=utf8
-    url: jdbc:mysql://8.138.133.94:3306/keshe?useSSL=false&useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
-    username: keshe
-    password: E5MXAT7rinSs3HdA
-    driver-class-name: com.mysql.cj.jdbc.Driver
+#    url: jdbc:mysql://8.138.133.94:3306/keshe?useSSL=false&useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
+    url: jdbc:postgresql://og.segfault.pp.ua:8887/prj
+    username: admin
+    password: wkTeam@666
+    driver-class-name: org.postgresql.Driver
+#    driver-class-name: com.mysql.cj.jdbc.Driver
 #    type: com.alibaba.druid.pool.DruidDataSource
 
 server:

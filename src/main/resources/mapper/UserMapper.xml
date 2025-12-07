@@ -67,7 +67,7 @@
     </select>
 
     <update id="updateNowUser">
-        update request_user SET `username`=#{username}
+        update request_user SET username=#{username}
             where id=1
     </update>
 
