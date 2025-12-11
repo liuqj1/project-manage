@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.science.mapper.UserMapper">
+
+    <resultMap id="detailUser" type="com.example.science.entity.User">
+        <id column="username" property="username"/>
+        <result column="password" property="password"/>
+        <result column="nickname" property="nickname"/>
+        <result column="gender" property="gender"/>
+        <result column="phone" property="phone"/>
+        <result column="email" property="email"/>
+        <result column="avatar" property="avatar"/>
+        <result column="creat_time" property="creatTime"/>
+        <result column="login_time" property="loginTime"/>
+        <result column="roleid" property="roleid"/>
+        <result column="status" property="status"/>
+    </resultMap>
+
+
+    <resultMap id="UserRoleList" type="com.example.science.dto.UserRoleDto">
+        <id column="roleid" property="roleid" />
+        <id column="pid" property="pid" />
+        <result column="project_name" property="projectName" />
+        <result column="teamid" property="teamid" />
+        <result column="introduce" property="introduce" />
+        <result column="budget" property="budget" />
+        <result column="expend" property="expend" />
+        <result column="status" property="status" />
+        <result column="declaration_time" property="declarationTime" />
+        <result column="charge_user_nickname" property="chargeUserNickname" />
+    </resultMap>
+
+    <resultMap id="UserProject" type="com.example.science.dto.UserProjectNumDto">
+        <id column="username" property="username"/>
+        <result column="nickname" property="nickname"/>
+        <result column="chargeProjectNum" property="chargeProjectNum"/>
+        <result column="involvedProjectNum" property="involvedProjectNum"/>
+        <result column="userNum" property="userNum"/>
+        <result column="manNum" property="manNum"/>
+        <result column="womanNum" property="womanNum"/>
+    </resultMap>
+
+    <resultMap id="roleDetail" type="com.example.science.entity.Role">
+        <id column="roleid" property="roleid" />
+        <id column="pid" property="pid" />
+        <result column="title" property="title" />
+    </resultMap>
+
+    <select id="getOneRoleList" parameterType="java.lang.Integer">
+        select ums_permission_list.title title
+        from ums_permission_list
+        left join ums_role_permission_relation on ums_role_permission_relation.pid = ums_permission_list.pid
+        where roleid = #{roleId}
+    </select>
+
+    <select id="getUserInvolvedProjectNum" resultMap="UserProject">
+        select ums_user.nickname as nickname,count(p.id) as involvedProjectNum
+        from ums_user left join team_user_relation using (username)
+                      left join team using (teamid) left join ums_user b on chargerid=b.username left join project p using(teamid) group by ums_user.username
+        having ums_user.username in    (SELECT ums_user.username FROM ums_user);
+    </select>
+
+    <select id="getUserChargeProjectNum" resultMap="UserProject">
+        select ums_user.nickname as nickname ,count(p.id) as chargeProjectNum
+        from ums_user left join team on ums_user.username = team.chargerid  left join project p using(teamid)
+        group by ums_user.username
+    </select>
+
+    <update id="updateNowUser">
+        update request_user SET username=#{username}
+            where id=1
+    </update>
+
+    <select id="getUserCount" resultMap="UserProject">
+        select count(*) as userNum,count( gender='男' or null) as manNum,count( gender='女' or null) as womanNum
+        from ums_user ;
+    </select>
+
+    <select id="getUserData" resultMap="detailUser">
+        select *
+        from ums_user
+    </select>
+
+    <insert id="addUser" parameterType="com.example.science.entity.User">
+        insert into ums_user(username,password,nickname,gender,phone,email,roleid,status,creat_time,login_time,avatar)
+        values(#{username},#{password},#{nickname},#{gender},#{phone},#{email},1,1,#{creatTime},#{creatTime},null)
+    </insert>
+
+    <update id="resetUserPassword" parameterType="java.lang.String">
+        update ums_user
+        set password='123456'
+        where username=#{username}
+    </update>
+
+    <delete id="deleteUser" parameterType="java.lang.String">
+        delete
+        from ums_user
+        where username=#{username}
+    </delete>
+
+    <select id="getProjectUser" parameterType="java.lang.Integer" resultMap="detailUser">
+        select ums_user.*
+        from project left join team t using(teamid)
+                    left join team_user_relation tur
+        using (teamid)left join ums_user using (username) where project.id=#{projectid};
+    </select>
+
+    <select id="getMyInfo" parameterType="java.lang.String" resultMap="detailUser">
+        select *
+        from ums_user
+        where username=#{username}
+    </select>
+
+    <update id="updateInfo" parameterType="com.example.science.entity.User">
+        update ums_user
+        set username=#{username},password=#{password},nickname=#{nickname},gender=#{gender},phone=#{phone},email=#{email},avatar=#{avatar},creat_time=#{creatTime},login_time=#{loginTime},roleid=#{roleid},status=#{status}
+        where username=#{username}
+    </update>
+
+    <update id="updateUserRole">
+        update ums_user set roleid=#{roleid}
+        where username=#{username} and roleid=1;
+    </update>
+</mapper>

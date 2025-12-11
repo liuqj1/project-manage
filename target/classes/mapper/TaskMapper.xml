@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.science.mapper.TaskMapper">
+
+    <resultMap id="detailTask" type="com.example.science.entity.Task">
+        <id column="id" property="id" />
+        <result column="projectid" property="projectid" />
+        <result column="username" property="username"/>
+        <result column="content" property="content"/>
+        <result column="nickname" property="nickname"/>
+    </resultMap>
+
+
+    <select id="getProjectTask" parameterType="java.lang.Integer" resultMap="detailTask">
+        select task.*,ums_user.nickname as nickname
+        from task LEFT JOIN  ums_user ON task.username=ums_user.username
+        where task.projectid=#{projectid}
+    </select>
+
+    <update id="assignTask">
+        update task
+        SET username=#{username}
+        where task.id=#{id}
+    </update>
+
+    <insert id="addTask">
+        insert into task(projectid,content,username)
+        values (#{projectid},#{content},null)
+    </insert>
+
+    <select id="getMyProjectTask" resultMap="detailTask">
+        select  *
+        from task
+        where projectid=#{projectid} and username=#{username}
+    </select>
+</mapper>
