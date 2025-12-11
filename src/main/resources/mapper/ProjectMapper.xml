@@ -103,24 +103,87 @@
             where ums_user.username= #{username} and p.status=2) group by project.id;
     </select>
     
-    <select id="getMyInvolvedProjectAchievement" resultMap="detailProject" parameterType="java.lang.String">
-        with sp as
-                     (select * from achievement_record where status=1)
+<!--    <select id="getMyInvolvedProjectAchievement" resultMap="detailProject" parameterType="java.lang.String">-->
+<!--        with sp as-->
+<!--                     (select * from achievement_record where status=1)-->
+
+<!--        SELECT-->
+<!--            project.*,count(sp.id ) as achievement_count, ums_user.nickname as charge_user_nickname-->
+<!--        FROM-->
+<!--            project left JOIN sp ON project.id=sp.projectid-->
+<!--                    left JOIN team ON project.teamid=team.teamid-->
+<!--                    left JOIN ums_user ON ums_user.username=team.chargerid-->
+<!--        where project.id  in (-->
+<!--            select distinct-->
+<!--                p.id-->
+<!--            from ums_user left join team_user_relation using (username)-->
+<!--                          left join team using (teamid) left join ums_user b on chargerid=b.username left join project p using(teamid)-->
+<!--            where ums_user.username = #{username} and p.status=2) group by project.id  ;-->
+
+<!--    </select>-->
+
+    <select id="getMyInvolvedProjectAchievement"
+            resultMap="detailProject"
+            parameterType="java.lang.String">
+
+        <!-- 先计算成果数量 -->
+        WITH sp AS (
+        SELECT projectid, COUNT(*) AS achievement_count
+        FROM achievement_record
+        WHERE status = 1
+        GROUP BY projectid
+        ),
+        -- appearanceCount 等四种类型数量
+        ac AS (
+        SELECT projectid,
+        SUM(CASE WHEN type = 'appearance' THEN 1 ELSE 0 END) AS appearanceCount,
+        SUM(CASE WHEN type = 'utility' THEN 1 ELSE 0 END) AS utilityCount,
+        SUM(CASE WHEN type = 'invention' THEN 1 ELSE 0 END) AS inventionCount,
+        SUM(CASE WHEN type = 'software' THEN 1 ELSE 0 END) AS softwareCount,
+        SUM(CASE WHEN type = 'paper' THEN 1 ELSE 0 END) AS paperCount
+        FROM achievement_record
+        GROUP BY projectid
+        ),
+        -- statusCount 按项目统计
+        sc AS (
+        SELECT projectid, COUNT(*) AS statusCount
+        FROM achievement_record
+        WHERE status = 1
+        GROUP BY projectid
+        )
 
         SELECT
-            project.*,count(sp.id ) as achievement_count, ums_user.nickname as charge_user_nickname
-        FROM
-            project left JOIN sp ON project.id=sp.projectid
-                    left JOIN team ON project.teamid=team.teamid
-                    left JOIN ums_user ON ums_user.username=team.chargerid
-        where project.id  in (
-            select distinct
-                p.id
-            from ums_user left join team_user_relation using (username)
-                          left join team using (teamid) left join ums_user b on chargerid=b.username left join project p using(teamid)
-            where ums_user.username = #{username} and p.status=2) group by project.id  ;
+        project.*,
+        team.teamname,
+        team.chargerid,
+        ums_user.nickname AS charge_user_nickname,
+        COALESCE(sp.achievement_count, 0) AS achievement_count,
+        COALESCE(ac.appearanceCount, 0) AS appearanceCount,
+        COALESCE(ac.utilityCount, 0) AS utilityCount,
+        COALESCE(ac.inventionCount, 0) AS inventionCount,
+        COALESCE(ac.softwareCount, 0) AS softwareCount,
+        COALESCE(ac.paperCount, 0) AS paperCount,
+        COALESCE(sc.statusCount, 0) AS statusCount
 
+        FROM project
+        LEFT JOIN team ON project.teamid = team.teamid
+        LEFT JOIN ums_user ON ums_user.username = team.chargerid
+        LEFT JOIN sp ON project.id = sp.projectid
+        LEFT JOIN ac ON project.id = ac.projectid
+        LEFT JOIN sc ON project.id = sc.projectid
+
+        WHERE project.id IN (
+        SELECT DISTINCT p.id
+        FROM ums_user
+        LEFT JOIN team_user_relation USING (username)
+        LEFT JOIN team USING (teamid)
+        LEFT JOIN ums_user b ON chargerid = b.username
+        LEFT JOIN project p USING (teamid)
+        WHERE ums_user.username = #{username}
+        AND p.status = 2
+        );
     </select>
+
 
     <update id="updateProjectStatus" parameterType="java.lang.Integer">
         update project
