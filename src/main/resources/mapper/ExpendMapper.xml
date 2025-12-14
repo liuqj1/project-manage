@@ -19,8 +19,8 @@
     </select>
 
     <insert id="insertExpend" parameterType="com.example.science.entity.Expend">
-        INSERT INTO expend_record (id,project_id,username,expend,status,declaration_time,description)
-        values (null,#{expend.projectId},#{expend.username},#{expend.expend},#{expend.status},#{expend.declarationTime},#{expend.description})
+        INSERT INTO expend_record (project_id,username,expend,status,declaration_time,description)
+        values (#{expend.projectId},#{expend.username},#{expend.expend},#{expend.status},#{expend.declarationTime},#{expend.description})
     </insert>
 
     <select id="getMyUnverifiedExpend" resultMap="detailExpend" parameterType="java.lang.String">

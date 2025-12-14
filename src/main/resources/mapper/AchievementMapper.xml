@@ -30,8 +30,8 @@
     </select>
 
     <insert id="addAchievement" parameterType="com.example.science.entity.Achievement">
-        insert into achievement_record (id,projectid,typeid,description,quality,status,username,declaration_time)
-        values (null,#{projectid},#{typeid},#{description},null,0,#{username},#{declarationTime})
+        insert into achievement_record (projectid,typeid,description,quality,status,username,declaration_time)
+        values (#{projectid},#{typeid},#{description},4,0,#{username},#{declarationTime})
     </insert>
 
     <select id="getAchievementStatus0" parameterType="java.lang.Integer" resultMap="detailAchievement">
@@ -43,7 +43,7 @@
 
     <update id="updateAchievementStatus" parameterType="java.lang.Integer">
         update achievement_record as ar
-        set ar.quality=#{quality}, ar.status="1"
+        set ar.quality=#{quality}, ar.status=1
         where ar.id=#{id}
     </update>
 

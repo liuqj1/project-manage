@@ -126,63 +126,71 @@
             resultMap="detailProject"
             parameterType="java.lang.String">
 
-        <!-- 先计算成果数量 -->
         WITH sp AS (
-        SELECT projectid, COUNT(*) AS achievement_count
-        FROM achievement_record
-        WHERE status = 1
-        GROUP BY projectid
+            SELECT projectid, COUNT(*) AS achievement_count
+            FROM achievement_record
+            WHERE status = 1
+            GROUP BY projectid
         ),
-        -- appearanceCount 等四种类型数量
-        ac AS (
-        SELECT projectid,
-        SUM(CASE WHEN type = 'appearance' THEN 1 ELSE 0 END) AS appearanceCount,
-        SUM(CASE WHEN type = 'utility' THEN 1 ELSE 0 END) AS utilityCount,
-        SUM(CASE WHEN type = 'invention' THEN 1 ELSE 0 END) AS inventionCount,
-        SUM(CASE WHEN type = 'software' THEN 1 ELSE 0 END) AS softwareCount,
-        SUM(CASE WHEN type = 'paper' THEN 1 ELSE 0 END) AS paperCount
-        FROM achievement_record
-        GROUP BY projectid
-        ),
-        -- statusCount 按项目统计
-        sc AS (
-        SELECT projectid, COUNT(*) AS statusCount
-        FROM achievement_record
-        WHERE status = 1
-        GROUP BY projectid
-        )
+             ac AS (
+                 SELECT projectid,
+                        SUM(CASE WHEN typeid = 2 THEN 1 ELSE 0 END) AS appearanceCount,
+                        SUM(CASE WHEN typeid = 3 THEN 1 ELSE 0 END) AS utilityCount,
+                        SUM(CASE WHEN typeid = 1 THEN 1 ELSE 0 END) AS inventionCount,
+                        SUM(CASE WHEN typeid = 4 THEN 1 ELSE 0 END) AS softwareCount,
+                        SUM(CASE WHEN typeid = 5 THEN 1 ELSE 0 END) AS paperCount
+                 FROM achievement_record
+                 GROUP BY projectid
+             ),
+             sc AS (
+                 SELECT projectid, COUNT(*) AS statusCount
+                 FROM achievement_record
+                 WHERE status = 1
+                 GROUP BY projectid
+             )
 
         SELECT
-        project.*,
-        team.teamname,
-        team.chargerid,
-        ums_user.nickname AS charge_user_nickname,
-        COALESCE(sp.achievement_count, 0) AS achievement_count,
-        COALESCE(ac.appearanceCount, 0) AS appearanceCount,
-        COALESCE(ac.utilityCount, 0) AS utilityCount,
-        COALESCE(ac.inventionCount, 0) AS inventionCount,
-        COALESCE(ac.softwareCount, 0) AS softwareCount,
-        COALESCE(ac.paperCount, 0) AS paperCount,
-        COALESCE(sc.statusCount, 0) AS statusCount
+            project.id,
+            project.project_name,
+            project.teamid,
+            project.introduce,
+            project.budget,
+            project.expend,
+            project.status,
+            project.declaration_time,
+
+            team.teamname,
+            team.chargerid,
+            ums_user.nickname AS charge_user_nickname,
+
+            COALESCE(sp.achievement_count, 0) AS achievement_count,
+            COALESCE(ac.appearanceCount, 0) AS appearanceCount,
+            COALESCE(ac.utilityCount, 0) AS utilityCount,
+            COALESCE(ac.inventionCount, 0) AS inventionCount,
+            COALESCE(ac.softwareCount, 0) AS softwareCount,
+            COALESCE(ac.paperCount, 0) AS paperCount,
+            COALESCE(sc.statusCount, 0) AS statusCount
 
         FROM project
-        LEFT JOIN team ON project.teamid = team.teamid
-        LEFT JOIN ums_user ON ums_user.username = team.chargerid
-        LEFT JOIN sp ON project.id = sp.projectid
-        LEFT JOIN ac ON project.id = ac.projectid
-        LEFT JOIN sc ON project.id = sc.projectid
+                 LEFT JOIN team ON project.teamid = team.teamid
+                 LEFT JOIN ums_user ON ums_user.username = team.chargerid
+                 LEFT JOIN sp ON project.id = sp.projectid
+                 LEFT JOIN ac ON project.id = ac.projectid
+                 LEFT JOIN sc ON project.id = sc.projectid
 
         WHERE project.id IN (
-        SELECT DISTINCT p.id
-        FROM ums_user
-        LEFT JOIN team_user_relation USING (username)
-        LEFT JOIN team USING (teamid)
-        LEFT JOIN ums_user b ON chargerid = b.username
-        LEFT JOIN project p USING (teamid)
-        WHERE ums_user.username = #{username}
-        AND p.status = 2
+            SELECT DISTINCT p.id
+            FROM ums_user
+                     LEFT JOIN team_user_relation USING (username)
+                     LEFT JOIN team USING (teamid)
+                     LEFT JOIN ums_user b ON chargerid = b.username
+                     LEFT JOIN project p USING (teamid)
+            WHERE ums_user.username = #{username}
+              AND p.status = 2
         );
+
     </select>
+
 
 
     <update id="updateProjectStatus" parameterType="java.lang.Integer">
@@ -192,17 +200,73 @@
     </update>
 
     <insert id="declareProject" parameterType="com.example.science.mapper.ProjectMapper">
-        insert into project (id,project_name,teamid,introduce,budget,expend,status,declaration_time)
-        values (null,#{projectName},#{teamid},#{introduce},#{budget},#{expend},#{status},#{declarationTime})
+        insert into project (project_name,teamid,introduce,budget,expend,status,declaration_time)
+        values (#{projectName},#{teamid},#{introduce},#{budget},#{expend},#{status},#{declarationTime})
     </insert>
 
-    <select id="getProjectView" parameterType="java.lang.Integer" resultMap="detailProject">
-        select project.*,count(ar.status=1 or null) as achievement_count,teamname,ums_user.nickname as charge_user_nickname,ar.status as achievement_status,ums_user.username as chargerid
-        from project left join team using(teamid) left join ums_user on chargerid=ums_user.username
-                     left join achievement_record ar on project.id = ar.projectid
-        where project.id=#{id}
-        group by ar.status ;
+<!--    <select id="getProjectView" parameterType="java.lang.Integer" resultMap="detailProject">-->
+<!--        select project.*,count(ar.status=1 or null) as achievement_count,teamname,ums_user.nickname as charge_user_nickname,ar.status as achievement_status,ums_user.username as chargerid-->
+<!--        from project left join team using(teamid) left join ums_user on chargerid=ums_user.username-->
+<!--                     left join achievement_record ar on project.id = ar.projectid-->
+<!--        where project.id=#{id}-->
+<!--        group by ar.status ;-->
+<!--    </select>-->
+
+    <select id="getProjectView"
+            parameterType="java.lang.Integer"
+            resultMap="detailProject">
+
+        SELECT
+            p.id,
+            p.project_name,
+            p.teamid,
+            p.introduce,
+            p.budget,
+            p.expend,
+            p.status,
+            p.declaration_time,
+
+            t.teamname,
+            t.chargerid,
+            u.nickname AS charge_user_nickname,
+
+            COALESCE(ar.achievement_count, 0) AS achievement_count,
+            COALESCE(ar.appearanceCount, 0) AS appearanceCount,
+            COALESCE(ar.utilityCount, 0) AS utilityCount,
+            COALESCE(ar.inventionCount, 0) AS inventionCount,
+            COALESCE(ar.softwareCount, 0) AS softwareCount,
+            COALESCE(ar.paperCount, 0) AS paperCount,
+            COALESCE(ar.statusCount, 0) AS statusCount
+
+        FROM project p
+                 LEFT JOIN team t ON p.teamid = t.teamid
+                 LEFT JOIN ums_user u ON t.chargerid = u.username
+                 LEFT JOIN (
+            SELECT
+                projectid,
+
+                -- 已通过成果数量
+                SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) AS achievement_count,
+
+                -- 总成果数量
+                COUNT(*) AS statusCount,
+
+                -- 各类型成果数量
+                SUM(CASE WHEN typeid = 2 THEN 1 ELSE 0 END) AS appearanceCount,
+                SUM(CASE WHEN typeid = 3 THEN 1 ELSE 0 END) AS utilityCount,
+                SUM(CASE WHEN typeid = 1 THEN 1 ELSE 0 END) AS inventionCount,
+                SUM(CASE WHEN typeid = 4 THEN 1 ELSE 0 END) AS softwareCount,
+                SUM(CASE WHEN typeid = 5 THEN 1 ELSE 0 END) AS paperCount
+
+            FROM achievement_record
+            GROUP BY projectid
+        ) ar ON p.id = ar.projectid
+
+        WHERE p.id = #{id};
+
     </select>
+
+
 
     <select id="getProjectAchievement" resultMap="detailProject" parameterType="java.lang.Integer">
         with sp as (select * from achievement_record where projectid=#{id} and achievement_record.status=1)

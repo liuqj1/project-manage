@@ -22,25 +22,66 @@
     </resultMap>
 
 
+<!--    <select id="getMyTeam" resultMap="TeamDetail" parameterType="java.lang.String">-->
+<!--        with charger as-->
+<!--                 (SELECT team.teamid team_id,ums_user.nickname charger_name,team.chargerid charger_id-->
+<!--                 FROM ums_user-->
+<!--                 INNER JOIN team on team.chargerid = ums_user.username)-->
+<!--        select charger.team_id,charger.charger_id,team.teamname team_name,charger_name,project_name,-->
+<!--                project.status,project.budget,project.declaration_time,ums_user.nickname-->
+<!--                from ums_user-->
+<!--                LEFT JOIN team_user_relation on team_user_relation.username = ums_user.username-->
+<!--                INNER JOIN team on team.teamid = team_user_relation.teamid-->
+<!--                INNER JOIN project on project.teamid = team.teamid-->
+<!--                INNER JOIN charger on charger.team_id = team.teamid-->
+<!--            WHERE ums_user.username = #{username}-->
+<!--    </select>-->
     <select id="getMyTeam" resultMap="TeamDetail" parameterType="java.lang.String">
-        with charger as
-                 (SELECT team.teamid team_id,ums_user.nickname charger_name,team.chargerid charger_id
-                 FROM ums_user
-                 INNER JOIN team on team.chargerid = ums_user.username)
-        select charger.team_id,charger.charger_id,team.teamname team_name,charger_name,project_name,
-                project.`status`,project.budget,project.declaration_time,ums_user.nickname
-                from ums_user
-                LEFT JOIN team_user_relation on team_user_relation.username = ums_user.username
-                INNER JOIN team on team.teamid = team_user_relation.teamid
-                INNER JOIN project on project.teamid = team.teamid
-                INNER JOIN charger on charger.team_id = team.teamid
-            WHERE ums_user.username = #{username}
+
+        WITH charger AS (
+            SELECT
+                team.teamid AS team_id,
+                ums_user.nickname AS charger_name,
+                team.chargerid AS charger_id
+            FROM ums_user
+                     INNER JOIN team ON team.chargerid = ums_user.username
+        )
+
+        SELECT
+            charger.team_id,
+            charger.charger_id,
+            team.teamname AS team_name,
+            charger.charger_name,
+            project.project_name,
+            project.status,
+            project.budget,
+            project.declaration_time,
+            ums_user.nickname
+        FROM ums_user
+                 LEFT JOIN team_user_relation ON team_user_relation.username = ums_user.username
+                 INNER JOIN team ON team.teamid = team_user_relation.teamid
+                 INNER JOIN project ON project.teamid = team.teamid
+                 INNER JOIN charger ON charger.team_id = team.teamid
+        WHERE ums_user.username = #{username};
+
     </select>
 
-    <select id="getMyChargedTeam" resultMap="detailTeam" parameterType="java.lang.String">
-        select teamid,teamname,chargername
-        from myownteam
+
+    <select id="getMyChargedTeam"
+            resultMap="detailTeam"
+            parameterType="java.lang.String">
+
+        SELECT
+            t.teamid,
+            t.teamname,
+            u.nickname AS chargername
+        FROM team t
+                 JOIN ums_user u
+                      ON t.chargerid = u.username
+        WHERE t.chargerid = #{username}
+
     </select>
+
 
     <select id="getTeamMembers" resultType="java.lang.String" parameterType="java.lang.Integer">
         select DISTINCT ums_user.nickname FROM ums_user
@@ -50,8 +91,10 @@
 
 
     <insert id="addMyChargedTeam" parameterType="java.util.Map">
-        insert into team values (null,#{map.teamName},#{map.chargerId})
+        INSERT INTO team (teamname, chargerid)
+        VALUES (#{map.teamName}, #{map.chargerId})
     </insert>
+
 
     <insert id="addTeamMembers" parameterType="java.util.Map">
         insert into team_user_relation values (#{teamId},#{username})
